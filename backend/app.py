@@ -314,6 +314,33 @@ def auth_user():
     if not user:
         return jsonify({"authenticated": False}), 200
     return jsonify({"authenticated": True, "user": user}), 200
+# для профиля
+@app.route("/user/bookings", methods=["GET"])
+def user_bookings():
+    user = session.get("user")
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    email = user["email"]
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("SELECT * FROM reservations WHERE user_email=%s ORDER BY date DESC", (email,))
+    rows = cur.fetchall()
+    conn.close()
+
+    bookings = []
+    for r in rows:
+        bookings.append({
+            "id": r["id"],
+            "date": str(r["date"]),
+            "branch": r["branch"],
+            "persons": r["guests"],
+            "menu": r["menu_items"],   # список меню
+            "status": r["status"]
+        })
+
+    return jsonify({"bookings": bookings})
 
 # ------------------- Вход через Google (redirect) -------------------
 @app.route("/login/google")
@@ -445,6 +472,85 @@ def create_reservation():
 
     return jsonify({"success": True, "reservation_id": res_id})
 
+# ------------------- Pending booking (server-side temporary) -------------------
+from flask import session as flask_session  # если не импортирован выше
+
+@app.route("/pending", methods=["POST"])
+def save_pending():
+    """
+    Сохраняет временную бронь в сессии (для незалогиненных).
+    Ожидает JSON с payload, например:
+    {
+      "branch": "...",
+      "date": "YYYY-MM-DD",
+      "tables": ["L4-1"],
+      "guests": 2,
+      "notes": "...",
+      "menu_items": ["Рамен 1", ...]
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Нет данных"}), 400
+
+    # сохраняем в flask session
+    flask_session["pending_booking"] = data
+    # пометим время либо другую мета, если нужно
+    return jsonify({"message": "pending saved"}), 200
+
+
+@app.route("/pending/claim", methods=["POST"])
+def claim_pending():
+    """
+    Если пользователь авторизован (session['user']), берет pending из session
+    (или из тела, если прислали) и создаёт reservation в БД привязанную к user_email.
+    Затем удаляет pending из session.
+    """
+    user = flask_session.get("user")
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    # Попытка взять pending из body (т.к. фронтенд может отправить localStorage copy)
+    body = request.get_json(silent=True) or {}
+    pending = body.get("pending") or flask_session.get("pending_booking")
+
+    if not pending:
+        return jsonify({"message": "Нет pending брони"}), 200
+
+    # валидируем минимальные поля
+    required = ["branch", "date", "tables", "guests"]
+    if any(k not in pending for k in required):
+        return jsonify({"error": "Заполнены не все обязательные поля в pending"}), 400
+
+    user_email = user.get("email")
+    branch = pending["branch"]
+    date = pending["date"]
+    tables = pending["tables"]
+    guests = pending["guests"]
+    notes = pending.get("notes", "")
+    menu_items = pending.get("menu_items", [])
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO reservations (user_email, branch, date, tables, guests, notes, menu_items)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (user_email, branch, date, tables, guests, notes, menu_items))
+        res_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("claim_pending error:", e)
+        return jsonify({"error": "Ошибка при создании брони"}), 500
+
+    # Убираем pending из session
+    flask_session.pop("pending_booking", None)
+
+    return jsonify({"success": True, "reservation_id": res_id}), 200
+
+
 # POST /reservation/confirm
 @app.route("/reservation/confirm", methods=["POST"])
 def confirm_reservation():
@@ -464,6 +570,53 @@ def confirm_reservation():
         return jsonify({"error": "Reservation not found"}), 404
 
     return jsonify({"success": True, "reservation_id": res_id}), 200
+
+@app.route("/reservation/cancel", methods=["POST"])
+def cancel_reservation():
+    try:
+        # 1. Сначала попробуем получить JSON
+        data = request.get_json(silent=True) # Используем silent=True, чтобы не упасть, если JSON невалидный
+        print("CANCEL RECEIVED (JSON):", data)
+
+        # 2. Если JSON не получен, логируем сырые данные/заголовки
+        if data is None:
+            # Попробуем прочитать как текст, если get_json провалился
+            raw_data = request.data.decode('utf-8')
+            print("CANCEL FAILED. RAW DATA RECEIVED:", raw_data)
+            print("HEADERS:", request.headers)
+            return jsonify({"error": "No valid JSON payload received or 'id' is missing"}), 400
+
+        # 3. Продолжаем, если JSON есть
+        res_id = data.get("id")
+
+        if not res_id:
+            # Сюда мы, вероятно, попадаем. data - это {}, или 'id' - None/0
+            return jsonify({"error": "Missing or invalid reservation id field in JSON"}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE reservations
+            SET status = 'cancelled'
+            WHERE id = %s
+            RETURNING id;
+        """, (res_id,))
+
+        row = cur.fetchone()
+        conn.commit()
+        conn.close()
+
+        if not row:
+            return jsonify({"error": "Reservation not found"}), 404
+        
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        print("cancel_reservation ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
 
 # Просмотр всех броней
 @app.route("/bookings", methods=["GET"])
