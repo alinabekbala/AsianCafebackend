@@ -31,3 +31,4 @@ Werkzeug==3.1.3
 gunicorn
 authlib
 flask-cors
+requests
