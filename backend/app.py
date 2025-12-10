@@ -29,8 +29,16 @@ def get_db():
 app = Flask(__name__)
 
 # ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN")
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": FRONTEND_ORIGIN}})
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://asian-cafefrontend.vercel.app")
+CORS(
+    app,
+    supports_credentials=True,
+    resources={
+        r"/*": {
+            "origins": [FRONTEND_ORIGIN, "http://localhost:3000"]
+        }
+    }
+)
 # ---- Сессии: в dev оставляем secure=False (на проде - True) ----
 app.secret_key = os.getenv("SESSION_SECRET")
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # чтобы браузер принимал cookie между origin'ами
@@ -374,6 +382,7 @@ def logout():
 
 # ------------------- Меню (оставил как есть) -------------------
 @app.route("/menu", methods=["GET"])
+@app.route("/api/menu", methods=["GET"]) 
 def get_menu():
     with open("menu.json", "r", encoding="utf-8") as f:
         menu = json.load(f)
