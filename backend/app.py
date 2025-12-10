@@ -44,16 +44,15 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
-CORS(
-    app,
-    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-    supports_credentials=True,
-)
-
 @app.after_request
 def add_cors_headers(response):
-    # На всякий случай явно добавляем поддержку credentials
-    response.headers.add("Access-Control-Allow-Credentials", "true")
+    origin = request.headers.get("Origin")
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
 # ---- Сессии ----
@@ -120,29 +119,29 @@ def init_pg():
         );
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS reservations (
-            id SERIAL PRIMARY KEY,
-            user_email TEXT NOT NULL,
-            branch TEXT NOT NULL,
-            date DATE NOT NULL,
-            tables TEXT[] NOT NULL,
-            guests INTEGER NOT NULL,
-            notes TEXT,
-            menu_items TEXT[],
-            status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS reservations (
+        id SERIAL PRIMARY KEY,
+        user_email TEXT NOT NULL,
+        branch TEXT NOT NULL,
+        date DATE NOT NULL,
+        tables TEXT[] NOT NULL,
+        guests INTEGER NOT NULL,
+        notes TEXT,
+        menu_items TEXT[],
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW()
         );
     """)
-    # NEW
+    #NEW
     cur.execute("""
         CREATE TABLE IF NOT EXISTS table_usage (
-            id SERIAL PRIMARY KEY,
-            table_id TEXT NOT NULL,
-            branch TEXT NOT NULL,
-            date DATE NOT NULL,
-            used_seats INTEGER NOT NULL
-        );
-    """)
+    id SERIAL PRIMARY KEY,
+    table_id TEXT NOT NULL,
+    branch TEXT NOT NULL,
+    date DATE NOT NULL,
+    used_seats INTEGER NOT NULL
+);
+    """ )
     conn.commit()
     conn.close()
 
@@ -613,11 +612,12 @@ def confirm_reservation():
 def cancel_reservation():
     try:
         # 1. Сначала попробуем получить JSON
-        data = request.get_json(silent=True)
+        data = request.get_json(silent=True) # Используем silent=True, чтобы не упасть, если JSON невалидный
         print("CANCEL RECEIVED (JSON):", data)
 
         # 2. Если JSON не получен, логируем сырые данные/заголовки
         if data is None:
+            # Попробуем прочитать как текст, если get_json провалился
             raw_data = request.data.decode('utf-8')
             print("CANCEL FAILED. RAW DATA RECEIVED:", raw_data)
             print("HEADERS:", request.headers)
@@ -627,6 +627,7 @@ def cancel_reservation():
         res_id = data.get("id")
 
         if not res_id:
+            # Сюда мы, вероятно, попадаем. data - это {}, или 'id' - None/0
             return jsonify({"error": "Missing or invalid reservation id field in JSON"}), 400
 
         conn = get_db()
@@ -645,6 +646,7 @@ def cancel_reservation():
 
         if not row:
             return jsonify({"error": "Reservation not found"}), 404
+        
 
         return jsonify({"success": True}), 200
 
@@ -653,8 +655,8 @@ def cancel_reservation():
         return jsonify({"error": str(e)}), 500
 
 
-# Просмотр всех броней из БД
-@app.route("/db/bookings", methods=["GET"])
+# Просмотр всех броней
+@app.route("/bookings", methods=["GET"])
 def get_bookings():
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -693,7 +695,7 @@ def log_request():
 
 @app.route("/reservation/confirm", methods=["OPTIONS"])
 def confirm_reservation_options():
-    return "", 200
+  return "", 200
 
 # ------------------- Запуск -------------------
 if __name__ == "__main__":
@@ -702,7 +704,7 @@ if __name__ == "__main__":
         with open("bookings.json", "w", encoding="utf-8") as f:
             json.dump([], f, ensure_ascii=False, indent=4)
 
-    # menu.json и menu_api инициализация
+    # menu.json и menu_api инициализация s
     try:
         from menu_api import menu_api, init_menu
         init_menu()
