@@ -11,6 +11,7 @@ import smtplib
 import random
 from email.message import EmailMessage
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # ------------------- PostgreSQL -------------------
@@ -28,21 +29,45 @@ def get_db():
 
 app = Flask(__name__)
 
-# ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://asian-cafefrontend.vercel.app")
+# ------------------- Конфиг окружения / фронта / бэка -------------------
+FRONTEND_ORIGIN = os.getenv(
+    "FRONTEND_ORIGIN",
+    "https://asian-cafefrontend.vercel.app"
+)
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
+
+IS_PROD = os.getenv("FLASK_ENV") == "production"
+
+# ---- CORS: разрешаем только наш фронтенд и localhost:3000 ----
+ALLOWED_ORIGINS = [
+    FRONTEND_ORIGIN,
+    "http://localhost:3000",
+]
+
 CORS(
     app,
+    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
     supports_credentials=True,
-    resources={
-        r"/*": {
-            "origins": [FRONTEND_ORIGIN, "http://localhost:3000"]
-        }
-    }
 )
-# ---- Сессии: в dev оставляем secure=False (на проде - True) ----
+
+@app.after_request
+def add_cors_headers(response):
+    # На всякий случай явно добавляем поддержку credentials
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
+# ---- Сессии ----
 app.secret_key = os.getenv("SESSION_SECRET")
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # чтобы браузер принимал cookie между origin'ами
-app.config['SESSION_COOKIE_SECURE'] = False      # в dev False (на prod нужно True + HTTPS)
+
+if IS_PROD:
+    # продакшен (Render + Vercel, всё по HTTPS)
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    # локальная разработка
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = False
+
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=20)
 
 # ------------------- Настройка Google OAuth -------------------
@@ -59,7 +84,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# ------------------- Создание таблиц
+# ------------------- Создание таблиц -------------------
 def init_pg():
     conn = get_db()
     cur = conn.cursor()
@@ -95,33 +120,33 @@ def init_pg():
         );
     """)
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS reservations (
-        id SERIAL PRIMARY KEY,
-        user_email TEXT NOT NULL,
-        branch TEXT NOT NULL,
-        date DATE NOT NULL,
-        tables TEXT[] NOT NULL,
-        guests INTEGER NOT NULL,
-        notes TEXT,
-        menu_items TEXT[],
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT NOW()
+        CREATE TABLE IF NOT EXISTS reservations (
+            id SERIAL PRIMARY KEY,
+            user_email TEXT NOT NULL,
+            branch TEXT NOT NULL,
+            date DATE NOT NULL,
+            tables TEXT[] NOT NULL,
+            guests INTEGER NOT NULL,
+            notes TEXT,
+            menu_items TEXT[],
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT NOW()
         );
     """)
-    #NEW
+    # NEW
     cur.execute("""
         CREATE TABLE IF NOT EXISTS table_usage (
-    id SERIAL PRIMARY KEY,
-    table_id TEXT NOT NULL,
-    branch TEXT NOT NULL,
-    date DATE NOT NULL,
-    used_seats INTEGER NOT NULL
-);
-    """ )
+            id SERIAL PRIMARY KEY,
+            table_id TEXT NOT NULL,
+            branch TEXT NOT NULL,
+            date DATE NOT NULL,
+            used_seats INTEGER NOT NULL
+        );
+    """)
     conn.commit()
     conn.close()
 
-# ------------------- Email отправка
+# ------------------- Email отправка -------------------
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
@@ -171,9 +196,9 @@ def index():
         <p><a href="/bookings">📅 Посмотреть брони</a></p>
         <p><a href="/logout">🚪 Выйти</a></p>
         """
-    return """
+    return f"""
     <h2>Главная страница</h2>
-    <p>Тут работает сервер API. Для UI используйте frontend на localhost:3000</p>
+    <p>Тут работает сервер API. Для UI используйте frontend: {FRONTEND_ORIGIN} или localhost:3000</p>
     """
 
 # ------------------- Регистрация (принимает JSON из фронтенда) -------------------
@@ -322,6 +347,7 @@ def auth_user():
     if not user:
         return jsonify({"authenticated": False}), 200
     return jsonify({"authenticated": True, "user": user}), 200
+
 # для профиля
 @app.route("/user/bookings", methods=["GET"])
 def user_bookings():
@@ -354,7 +380,7 @@ def user_bookings():
 @app.route("/login/google")
 def login_google():
     session.permanent = True
-    redirect_uri = "http://localhost:5000/authorize"
+    redirect_uri = f"{BACKEND_URL}/authorize"
     return google.authorize_redirect(redirect_uri)
 
 @app.route("/authorize")
@@ -380,15 +406,15 @@ def logout():
         return jsonify({"message": "Выход выполнен"}), 200
     return redirect(FRONTEND_ORIGIN)
 
-# ------------------- Меню (оставил как есть) -------------------
+# ------------------- Меню -------------------
 @app.route("/menu", methods=["GET"])
-@app.route("/api/menu", methods=["GET"]) 
+@app.route("/api/menu", methods=["GET"])
 def get_menu():
     with open("menu.json", "r", encoding="utf-8") as f:
         menu = json.load(f)
     return jsonify(menu)
 
-# ------------------- Создание брони -------------------
+# ------------------- Создание брони (старый JSON-файл) -------------------
 @app.route("/book", methods=["POST"])
 def create_booking():
     data = request.get_json()
@@ -403,11 +429,12 @@ def create_booking():
         json.dump(bookings, f, ensure_ascii=False, indent=4)
     return jsonify({"message": "Бронь успешно добавлена"}), 201
 
-# ------------------- Просмотр броней -------------------
+# ------------------- Просмотр броней (из файла) -------------------
 @app.route("/bookings", methods=["GET"])
 def view_bookings():
     if not os.path.exists("bookings.json"):
         return jsonify([])
+
     with open("bookings.json", "r", encoding="utf-8") as f:
         bookings = json.load(f)
     return jsonify(bookings)
@@ -424,6 +451,7 @@ def search_booking():
     if not results:
         return jsonify({"message": "Бронь не найдена"}), 404
     return jsonify(results)
+
 # NEW
 @app.route("/occupied", methods=["GET"])
 def get_occupied():
@@ -449,7 +477,8 @@ def get_occupied():
         occupied.extend(row[0])
 
     return jsonify({"occupied": occupied})
-# Создание брони
+
+# Создание брони (в БД)
 @app.route("/reservation", methods=["POST"])
 def create_reservation():
     data = request.get_json()
@@ -584,12 +613,11 @@ def confirm_reservation():
 def cancel_reservation():
     try:
         # 1. Сначала попробуем получить JSON
-        data = request.get_json(silent=True) # Используем silent=True, чтобы не упасть, если JSON невалидный
+        data = request.get_json(silent=True)
         print("CANCEL RECEIVED (JSON):", data)
 
         # 2. Если JSON не получен, логируем сырые данные/заголовки
         if data is None:
-            # Попробуем прочитать как текст, если get_json провалился
             raw_data = request.data.decode('utf-8')
             print("CANCEL FAILED. RAW DATA RECEIVED:", raw_data)
             print("HEADERS:", request.headers)
@@ -599,7 +627,6 @@ def cancel_reservation():
         res_id = data.get("id")
 
         if not res_id:
-            # Сюда мы, вероятно, попадаем. data - это {}, или 'id' - None/0
             return jsonify({"error": "Missing or invalid reservation id field in JSON"}), 400
 
         conn = get_db()
@@ -618,7 +645,6 @@ def cancel_reservation():
 
         if not row:
             return jsonify({"error": "Reservation not found"}), 404
-        
 
         return jsonify({"success": True}), 200
 
@@ -627,8 +653,8 @@ def cancel_reservation():
         return jsonify({"error": str(e)}), 500
 
 
-# Просмотр всех броней
-@app.route("/bookings", methods=["GET"])
+# Просмотр всех броней из БД
+@app.route("/db/bookings", methods=["GET"])
 def get_bookings():
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -667,7 +693,7 @@ def log_request():
 
 @app.route("/reservation/confirm", methods=["OPTIONS"])
 def confirm_reservation_options():
-  return "", 200
+    return "", 200
 
 # ------------------- Запуск -------------------
 if __name__ == "__main__":
@@ -676,7 +702,7 @@ if __name__ == "__main__":
         with open("bookings.json", "w", encoding="utf-8") as f:
             json.dump([], f, ensure_ascii=False, indent=4)
 
-    # menu.json и menu_api инициализация s
+    # menu.json и menu_api инициализация
     try:
         from menu_api import menu_api, init_menu
         init_menu()
