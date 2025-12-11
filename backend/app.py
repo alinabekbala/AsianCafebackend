@@ -11,6 +11,7 @@ import smtplib
 import random
 from email.message import EmailMessage
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix # Добавьте этот импорт
 load_dotenv()
 
 # ------------------- PostgreSQL -------------------
@@ -27,7 +28,7 @@ def get_db():
 
 
 app = Flask(__name__)
-
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # Добавьте эту строку
 # ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://asian-cafefrontend.vercel.app")
 CORS(
@@ -354,7 +355,7 @@ def user_bookings():
 @app.route("/login/google")
 def login_google():
     session.permanent = True
-    redirect_uri = "http://localhost:5000/authorize"
+    redirect_uri = "https://asiancafebackend.onrender.com/authorize"
     return google.authorize_redirect(redirect_uri)
 
 @app.route("/authorize")
