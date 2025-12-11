@@ -4,3 +4,4 @@ venv/
 instance/
 .env
 .DS_Store
+backend/.env
