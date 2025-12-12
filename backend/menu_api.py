@@ -111,23 +111,8 @@ def get_menu():
     with open(MENU_FILE, "r", encoding="utf-8") as f:
         menu_data = json.load(f)
 
-    result = []
-    for category in menu_data:
-        category_name = category["category"]
-        items = []
+    # просто возвращаем список блюд с корректными URL
+    for dish in menu_data:
+        dish["img"] = BACKEND_URL + dish["img"]
 
-        for dish in category["items"]:
-            items.append({
-                "name": dish["name"],
-                "price": dish["price"],
-                "desc": dish["desc"],
-                "img": f"{BACKEND_URL}{dish['img']}"
-            })
-
-        result.append({
-            "category": category_name,
-            "items": items
-        })
-
-    return jsonify(result)
-
+    return jsonify(menu_data)
