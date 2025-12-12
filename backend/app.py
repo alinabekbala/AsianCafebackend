@@ -373,7 +373,7 @@ def authorize():
         "email": user_info.get("email"),
     }
 
-    return redirect(FRONTEND_ORIGIN)
+    return redirect(FRONTEND_ORIGIN + "/account")
 
 # ------------------- Выход -------------------
 @app.route("/logout", methods=["POST", "GET"])
