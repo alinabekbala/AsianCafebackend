@@ -25,6 +25,11 @@ DB = {
 }
 
 def get_db():
+    # Создайте новый словарь, чтобы добавить sslmode, если он еще не добавлен
+    db_config = DB.copy()
+    
+    # Добавьте sslmode=require (это может быть необходимо)
+    db_config['sslmode'] = 'require'
     return psycopg2.connect(**DB)
 
 
