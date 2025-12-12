@@ -30,6 +30,11 @@ def get_db():
     return psycopg2.connect(**db_config)   # ← исправлено
 
 app = Flask(__name__, static_url_path="/static", static_folder="static")
+@app.route("/static/images/<path:filename>")
+def serve_static_images(filename):
+    # Указываем путь к папке, содержащей images
+    # Обратите внимание: путь "static/images" должен быть относительно корня вашего проекта
+    return send_from_directory("static/images", filename)
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # Добавьте эту строку
 # ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
