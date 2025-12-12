@@ -1,178 +1,159 @@
 [
-    {
-        "id": 1,
+  {
+    "category": "Рамен",
+    "items": [
+      {
         "name": "Классический рамен",
-        "category": "Рамен",
         "price": 1800,
-        "description": "Ароматный бульон, лапша, яйцо и зелень",
-        "img": "/static/images/ramen.png"
-    },
-    {
-        "id": 2,
+        "desc": "Ароматный бульон, лапша, яйцо и зелень",
+        "img": "static/images/ramen.png"
+      },
+      {
         "name": "Рамен с сыром",
-        "category": "Рамен",
         "price": 2000,
-        "description": "Добавь сыр и выбери уровень остроты",
-        "img": "/static/images/ramen_cheese.png"
-    },
-    {
-        "id": 3,
+        "desc": "Добавь сыр и выбери уровень остроты",
+        "img": "static/images/ramen_cheese.png"
+      },
+      {
         "name": "Острый рамен с говядиной",
-        "category": "Рамен",
         "price": 2200,
-        "description": "Пряный бульон и нежная говядина в фирменном соусе",
-        "img": "/static/images/ramen_beef.png"
-    },
-    {
-        "id": 4,
+        "desc": "Пряный бульон и нежная говядина в фирменном соусе",
+        "img": "static/images/ramen_beef.png"
+      }
+    ]
+  },
+  {
+    "category": "Роллы",
+    "items": [
+      {
         "name": "Филадельфия",
-        "category": "Роллы",
         "price": 2400,
-        "description": "Лосось, сливочный сыр, авокадо, рис, нори",
-        "img": "/static/images/roll_phila.png"
-    },
-    {
-        "id": 5,
+        "desc": "Лосось, сливочный сыр, авокадо, рис, нори",
+        "img": "static/images/roll_phila.png"
+      },
+      {
         "name": "Цезарь ролл",
-        "category": "Роллы",
         "price": 2000,
-        "description": "Курица, салат, пармезан, соус цезарь",
-        "img": "/static/images/roll_caesar.png"
-    },
-    {
-        "id": 6,
+        "desc": "Курица, салат, пармезан, соус цезарь",
+        "img": "static/images/roll_caesar.png"
+      },
+      {
         "name": "Калифорния",
-        "category": "Роллы",
         "price": 2300,
-        "description": "Крабовое мясо, огурец, авокадо, икра тобико",
-        "img": "/static/images/roll_california.png"
-    },
-    {
-        "id": 7,
+        "desc": "Крабовое мясо, огурец, авокадо, икра тобико",
+        "img": "static/images/roll_california.png"
+      },
+      {
         "name": "Острый тунец",
-        "category": "Роллы",
         "price": 2500,
-        "description": "Тунец, острый соус, зелёный лук",
-        "img": "/static/images/roll_tuna.png"
-    },
-    {
-        "id": 8,
+        "desc": "Тунец, острый соус, зелёный лук",
+        "img": "static/images/roll_tuna.png"
+      }
+    ]
+  },
+  {
+    "category": "Напитки",
+    "items": [
+      {
         "name": "Кока-Кола",
-        "category": "Напитки",
         "price": 500,
-        "description": "Классическая Coca-Cola 0.33 л",
-        "img": "/static/images/cola.png"
-    },
-    {
-        "id": 9,
+        "desc": "Классическая Coca-Cola 0.33 л",
+        "img": "static/images/cola.png"
+      },
+      {
         "name": "Кола Зеро",
-        "category": "Напитки",
         "price": 500,
-        "description": "Без сахара",
-        "img": "/static/images/cola_zero.png"
-    },
-    {
-        "id": 10,
+        "desc": "Без сахара",
+        "img": "static/images/cola_zero.png"
+      },
+      {
         "name": "Фанта",
-        "category": "Напитки",
         "price": 500,
-        "description": "Апельсиновая газировка 0.33 л",
-        "img": "/static/images/fanta.png"
-    },
-    {
-        "id": 11,
+        "desc": "Апельсиновая газировка 0.33 л",
+        "img": "static/images/fanta.png"
+      },
+      {
         "name": "Молоко обычное",
-        "category": "Напитки",
         "price": 400,
-        "description": "Классическое молоко",
-        "img": "/static/images/milk_plain.png"
-    },
-    {
-        "id": 12,
+        "desc": "Классическое молоко",
+        "img": "static/images/milk_plain.png"
+      },
+      {
         "name": "Молоко клубничное",
-        "category": "Напитки",
         "price": 450,
-        "description": "Сладкое молоко с клубничным сиропом",
-        "img": "/static/images/milk_strawberry.png"
-    },
-    {
-        "id": 13,
+        "desc": "Сладкое молоко с клубничным сиропом",
+        "img": "static/images/milk_strawberry.png"
+      },
+      {
         "name": "Молоко банановое",
-        "category": "Напитки",
         "price": 450,
-        "description": "Молоко с банановым вкусом",
-        "img": "/static/images/milk_banana.png"
-    },
-    {
-        "id": 14,
+        "desc": "Молоко с банановым вкусом и лёгкой сладостью",
+        "img": "static/images/milk_banana.png"
+      },
+      {
         "name": "Вода с газом",
-        "category": "Напитки",
         "price": 300,
-        "description": "Освежающая вода с пузырьками",
-        "img": "/static/images/water_sparkling.png"
-    },
-    {
-        "id": 15,
+        "desc": "Освежающая вода с пузырьками",
+        "img": "static/images/water_sparkling.png"
+      },
+      {
         "name": "Вода без газа",
-        "category": "Напитки",
         "price": 300,
-        "description": "Чистая минеральная вода",
-        "img": "/static/images/water_still.png"
-    },
-    {
-        "id": 16,
+        "desc": "Чистая минеральная вода",
+        "img": "static/images/water_still.png"
+      }
+    ]
+  },
+  {
+    "category": "Бабл-ти",
+    "items": [
+      {
         "name": "Бабл-ти с орео",
-        "category": "Бабл-ти",
         "price": 1500,
-        "description": "Молочный чай с кусочками печенья орео",
-        "img": "/static/images/bubble_oreo.png"
-    },
-    {
-        "id": 17,
+        "desc": "Молочный чай с кусочками печенья орео",
+        "img": "static/images/bubble_oreo.png"
+      },
+      {
         "name": "Матча бабл-ти",
-        "category": "Бабл-ти",
         "price": 1600,
-        "description": "Матча с молоком и тапиокой",
-        "img": "/static/images/bubble_matcha.png"
-    },
-    {
-        "id": 18,
+        "desc": "Матча с молоком и тапиокой",
+        "img": "static/images/bubble_matcha.png"
+      },
+      {
         "name": "Клубничный бабл-ти",
-        "category": "Бабл-ти",
         "price": 1500,
-        "description": "Клубничный сироп и тапиока",
-        "img": "/static/images/bubble_strawberry.png"
-    },
-    {
-        "id": 19,
+        "desc": "Клубничный сироп и тапиока",
+        "img": "static/images/bubble_strawberry.png"
+      }
+    ]
+  },
+  {
+    "category": "Десерты",
+    "items": [
+      {
         "name": "Моти с клубникой",
-        "category": "Десерты",
         "price": 800,
-        "description": "Рисовое пирожное с клубничной начинкой",
-        "img": "/static/images/mochi_strawberry.png"
-    },
-    {
-        "id": 20,
+        "desc": "Рисовое пирожное с клубничной начинкой",
+        "img": "static/images/mochi_strawberry.png"
+      },
+      {
         "name": "Моти с орео",
-        "category": "Десерты",
         "price": 850,
-        "description": "Моти с кремом и печеньем орео",
-        "img": "/static/images/mochi_oreo.png"
-    },
-    {
-        "id": 21,
+        "desc": "Моти с кремом и печеньем орео",
+        "img": "static/images/mochi_oreo.png"
+      },
+      {
         "name": "Моти с голубикой",
-        "category": "Десерты",
         "price": 850,
-        "description": "Моти с голубичной начинкой",
-        "img": "/static/images/mochi_blueberry.png"
-    },
-    {
-        "id": 22,
+        "desc": "Моти с голубичной начинкой",
+        "img": "static/images/mochi_blueberry.png"
+      },
+      {
         "name": "Японский чизкейк",
-        "category": "Десерты",
         "price": 1200,
-        "description": "Лёгкий воздушный десерт с нежным сливочным вкусом",
-        "img": "/static/images/cheesecake.png"
-    }
+        "desc": "Лёгкий воздушный десерт с нежным сливочным вкусом",
+        "img": "static/images/cheesecake.png"
+       }
+    ]
+  }
 ]
