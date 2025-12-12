@@ -25,15 +25,12 @@ DB = {
 }
 
 def get_db():
-    # Создайте новый словарь, чтобы добавить sslmode, если он еще не добавлен
     db_config = DB.copy()
-    
-    # Добавьте sslmode=require (это может быть необходимо)
-    db_config['sslmode'] = 'require'
-    return psycopg2.connect(**DB)
-
+    db_config["sslmode"] = "require"
+    return psycopg2.connect(**db_config)   # ← исправлено
 
 app = Flask(__name__, static_url_path="/static", static_folder="static")
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # Добавьте эту строку
 # ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://asian-cafefrontend.vercel.app")
@@ -127,6 +124,14 @@ def init_pg():
     """ )
     conn.commit()
     conn.close()
+# ------------------------------------------------
+# ИНИЦИАЛИЗАЦИЯ POSTGRES ПРИ СТАРТЕ ПРИЛОЖЕНИЯ
+# ------------------------------------------------
+try:
+    init_pg()
+    print("PostgreSQL initialized.")
+except Exception as e:
+    print("init_pg ERROR:", e)
 
 # ------------------- Email отправка
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
@@ -637,7 +642,7 @@ def cancel_reservation():
 
 
 # Просмотр всех броней
-@app.route("/bookings", methods=["GET"])
+@app.route("/admin/bookings", methods=["GET"])
 def get_bookings():
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
