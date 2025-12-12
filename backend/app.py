@@ -12,6 +12,7 @@ import random
 from email.message import EmailMessage
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix # Добавьте этот импорт
+from flask import send_from_directory
 load_dotenv()
 
 # ------------------- PostgreSQL -------------------
@@ -27,7 +28,7 @@ def get_db():
     return psycopg2.connect(**DB)
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="/static", static_folder="static")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # Добавьте эту строку
 # ---- CORS: разрешаем только локальный фронтенд и включаем credentials ----
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://asian-cafefrontend.vercel.app")
@@ -176,7 +177,9 @@ def index():
     <h2>Главная страница</h2>
     <p>Тут работает сервер API. Для UI используйте frontend на localhost:3000</p>
     """
-
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('static', filename)
 # ------------------- Регистрация (принимает JSON из фронтенда) -------------------
 @app.route("/register", methods=["POST"])
 def register():
