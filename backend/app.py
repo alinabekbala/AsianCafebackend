@@ -43,7 +43,7 @@ CORS(
 )
 # ---- Сессии: в dev оставляем secure=False (на проде - True) ----
 app.secret_key = os.getenv("SESSION_SECRET")
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # чтобы браузер принимал cookie между origin'ами
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'   # чтобы браузер принимал cookie между origin'ами
 app.config['SESSION_COOKIE_SECURE'] = True     # в dev False (на prod нужно True + HTTPS)
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=20)
 
