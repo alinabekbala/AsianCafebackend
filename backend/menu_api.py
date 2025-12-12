@@ -25,11 +25,11 @@ def init_menu():
 
             {"id": 4, "name": "Филадельфия", "category": "Роллы", "price": 2400,
              "description": "Лосось, сливочный сыр, авокадо, рис, нори",
-             "img": "{/static/images/roll_phila.png"},
+             "img": "/static/images/roll_phila.png"},
 
             {"id": 5, "name": "Цезарь ролл", "category": "Роллы", "price": 2000,
              "description": "Курица, салат, пармезан, соус цезарь",
-             "img": "{/static/images/roll_caesar.png"},
+             "img": "/static/images/roll_caesar.png"},
 
             {"id": 6, "name": "Калифорния", "category": "Роллы", "price": 2300,
              "description": "Крабовое мясо, огурец, авокадо, икра тобико",
@@ -111,8 +111,8 @@ def get_menu():
     with open(MENU_FILE, "r", encoding="utf-8") as f:
         menu_data = json.load(f)
 
-    # просто возвращаем список блюд с корректными URL
     for dish in menu_data:
+        # dish["img"] = "/static/images/filename.png"
         dish["img"] = BACKEND_URL + dish["img"]
 
     return jsonify(menu_data)
