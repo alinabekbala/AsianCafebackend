@@ -13,7 +13,10 @@ from email.message import EmailMessage
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix # Добавьте этот импорт
 from flask import send_from_directory
+from menu_api import menu_api
 load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ------------------- PostgreSQL -------------------
 DB = {
@@ -29,7 +32,12 @@ def get_db():
     db_config["sslmode"] = "require"
     return psycopg2.connect(**db_config)   # ← исправлено
 
-app = Flask(__name__, static_url_path="/static", static_folder="static")
+app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"),
+    static_url_path="/static")
+@app.route("/")
+def healthcheck():
+    return {"status": "ok"}
+
 @app.route("/static/images/<path:filename>")
 def serve_static_images(filename):
     # Указываем путь к папке, содержащей images
